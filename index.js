@@ -6,8 +6,15 @@ const
   bodyParser = require('body-parser'),
   app = express().use(bodyParser.json()); // creates express http server
 
+const VERIFY_TOKEN = process.env.FB_MSGR_ACCESS_TOKEN // verify token in heroku config
+
 // Sets server port and logs message on success
-app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
+app.listen(process.env.PORT || 1337, () => console.log('Weber the Webhook is listening on port 1337!'));
+
+// Reply for index route
+app.get('/', function (req, res) {
+	res.send("Hello world! I am a Facebook Messenger chatbot created by Raymond Guo.");
+});
 
 // Creates the endpoint for our webhook 
 app.post('/webhook', (req, res) => {  
@@ -37,9 +44,6 @@ app.post('/webhook', (req, res) => {
 
 // Adds support for GET requests to our webhook
 app.get('/webhook', (req, res) => {
-
-  // Your verify token. Should be a random string.
-  let VERIFY_TOKEN = "test"
     
   // Parse the query params
   let mode = req.query['hub.mode'];
