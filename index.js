@@ -13,7 +13,7 @@ app.listen(process.env.PORT || 1337, () => console.log('Weber the Webhook is lis
 
 // Reply for index route
 app.get('/', function (req, res) {
-	res.send("Hello world! I am a Facebook Messenger chatbot created by Raymond Guo.");
+	res.send("702980115");
 });
 
 // Creates the endpoint for our webhook 
