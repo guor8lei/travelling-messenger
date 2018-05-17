@@ -11,11 +11,6 @@ const VERIFY_TOKEN = process.env.FB_MSGR_ACCESS_TOKEN // verify token in heroku 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('Weber the Webhook is listening on port 1337!'));
 
-// Reply for index route
-app.get('/', function (req, res) {
-	res.send("702980115");
-});
-
 // Creates the endpoint for our webhook 
 app.post('/webhook', (req, res) => {  
  
