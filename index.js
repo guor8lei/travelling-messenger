@@ -90,28 +90,38 @@ app.get('/webhook', (req, res) => {
 // Handles messages events
 function handleMessage(sender_psid, received_message) {
 
-  let responseMessenger = "Default response.";
+  let responseMessenger = {
+    "text": `Sorry, I don't know how to respond. Try typing 'help' to get a list of my functionalities.`
+  }
 
   // Check if the message contains text
   if (received_message.text) {    
     
-    let dialogflow = apiaiApp.textRequest(received_message.text, {
-      sessionId: 'dialogflow-session' // use any arbitrary id
-    });
-  
-    dialogflow.on('response', (responseDialog) => {
-      console.log(responseDialog);
-      responseMessenger = { "text": responseDialog.result.fulfillment.speech }
-      
+    if (received_message.text.toLowerCase() === "help") {
+      responseMessenger = {
+        "text": `I'm a Facebook Messenger chatbot created by Raymond. I hope to be a travel advising companion by integrating together APIs that provide weather, hotel, dining, and flight information. For now, let's just have a conversation!`
+      }
       callSendAPI(sender_psid, responseMessenger);  
-     });
-  
-    dialogflow.on('error', (error) => {
-      console.log(error);
-    });
-  
-    dialogflow.end();
-
+      
+    } else {
+      let dialogflow = apiaiApp.textRequest(received_message.text, {
+        sessionId: 'dialogflow-session' // use any arbitrary id
+      });
+    
+      dialogflow.on('response', (responseDialog) => {
+        console.log(responseDialog);
+        responseMessenger = { "text": responseDialog.result.fulfillment.speech }
+        
+        callSendAPI(sender_psid, responseMessenger);  
+       });
+    
+      dialogflow.on('error', (error) => {
+        console.log(error);
+      });
+    
+      dialogflow.end();  
+    }
+    
     // Create the payload for a basic text message
     // response = {
     //   "attachment": {
@@ -136,7 +146,7 @@ function handleMessage(sender_psid, received_message) {
     //   }
   } else {
   	responseMessenger = {
-      "text": `Sorry, I don't know how to respond, son`
+      "text": `Sorry, I don't know how to respond. Try typing 'help' to get a list of my functionalities.`
     }
     callSendAPI(sender_psid, responseMessenger);    
   }
