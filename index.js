@@ -101,8 +101,9 @@ function handleMessage(sender_psid, received_message) {
   
     dialogflow.on('response', (responseDialog) => {
       console.log(responseDialog);
-      responseMessenger = responseDialog.result.fulfillment.speech;
-      console.log("Response should be: ", responseMessenger);
+      responseMessenger = { "text": responseDialog.result.fulfillment.speech }
+      
+      callSendAPI(sender_psid, responseMessenger);  
      });
   
     dialogflow.on('error', (error) => {
@@ -137,11 +138,8 @@ function handleMessage(sender_psid, received_message) {
   	responseMessenger = {
       "text": `Sorry, I don't know how to respond, son`
     }
+    callSendAPI(sender_psid, responseMessenger);    
   }
-  
-  // Sends the response message
-  console.log("Calling sendAPI with response ", responseMessenger);
-  callSendAPI(sender_psid, responseMessenger);    
 }
 
 // Handles messaging_postbacks events
