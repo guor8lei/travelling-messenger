@@ -6,6 +6,10 @@ const
   bodyParser = require('body-parser'),
   request = require('request'),
   app = express().use(bodyParser.json()); // creates express http server
+  
+// Set up Dialogflow for small talk
+const apiai = require('apiai');
+const apiaiApp = apiai("c314434cf4a14be28da4fd618cecaab7");
 
 const PAGE_ACCESS_TOKEN = process.env.FB_MSGR_ACCESS_TOKEN // verify token in heroku config
 
@@ -86,41 +90,58 @@ app.get('/webhook', (req, res) => {
 // Handles messages events
 function handleMessage(sender_psid, received_message) {
 
-  let response;
+  let responseMessenger = "Default response.";
 
   // Check if the message contains text
   if (received_message.text) {    
+    
+    let dialogflow = apiaiApp.textRequest(received_message.text, {
+      sessionId: 'dialogflow-session' // use any arbitrary id
+    });
+  
+    dialogflow.on('response', (responseDialog) => {
+      console.log(responseDialog);
+      responseMessenger = responseDialog.result.fulfillment.speech;
+      console.log("Response should be: ", responseMessenger);
+     });
+  
+    dialogflow.on('error', (error) => {
+      console.log(error);
+    });
+  
+    dialogflow.end();
 
     // Create the payload for a basic text message
-    response = {
-      "attachment": {
-        "type": "template",
-        "payload": {
-          "template_type": "button",
-          "text": `Hey son, I've gotten alittle old and a little hard of hearing, but I think you said "${received_message.text}". Is that wot u said, brother?`,
-          "buttons": [
-			  {
-                "type": "postback",
-                "title": "Yes ur amazing!",
-                "payload": "yes",
-              },
-              {
-                "type": "postback",
-                "title": "No u suk old man!",
-                "payload": "no",
-              }
-            ]
-          }
-        }
-      }
+    // response = {
+    //   "attachment": {
+    //     "type": "template",
+    //     "payload": {
+    //       "template_type": "button",
+    //       "text": `Hey son, I've gotten alittle old and a little hard of hhearing, but I think you said "${received_message.text}". Is that wot u said, brother?`,
+    //       "buttons": [
+			 // {
+    //             "type": "postback",
+    //             "title": "Yes ur amazing!",
+    //             "payload": "yes",
+    //           },
+    //           {
+    //             "type": "postback",
+    //             "title": "No u suk old man!",
+    //             "payload": "no",
+    //           }
+    //         ]
+    //       }
+    //     }
+    //   }
   } else {
-  	response = {
+  	responseMessenger = {
       "text": `Sorry, I don't know how to respond, son`
     }
   }
   
   // Sends the response message
-  callSendAPI(sender_psid, response);    
+  console.log("Calling sendAPI with response ", responseMessenger);
+  callSendAPI(sender_psid, responseMessenger);    
 }
 
 // Handles messaging_postbacks events
@@ -149,6 +170,8 @@ function callSendAPI(sender_psid, response) {
     },
     "message": response
   }
+  
+  console.log(request_body);
 
   // Send the HTTP request to the Messenger Platform
   request({
@@ -158,7 +181,7 @@ function callSendAPI(sender_psid, response) {
     "json": request_body
   }, (err, res, body) => {
     if (!err) {
-      console.log('message sent!')
+      console.log('Message sent! The sent message contents: ', response);
     } else {
       console.error("Unable to send message:" + err);
     }
