@@ -11,7 +11,12 @@ const
 const apiai = require('apiai');
 const apiaiApp = apiai("c314434cf4a14be28da4fd618cecaab7");
 
-const PAGE_ACCESS_TOKEN = process.env.FB_MSGR_ACCESS_TOKEN // verify token in heroku config
+// Set up Yelp Fusion API
+const YELP_TOKEN = process.env.YELP_TOKEN // page access token in heroku config
+const yelp = require('yelp-fusion');
+const yelpClient = yelp.client(YELP_TOKEN);
+
+const PAGE_ACCESS_TOKEN = process.env.FB_MSGR_ACCESS_TOKEN // page access token in heroku config
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('Weber the Webhook is listening on port 1337!'));
@@ -34,12 +39,12 @@ app.post('/webhook', (req, res) => {
 
 	  // Gets the body of the webhook event
 	  let webhook_event = entry.messaging[0];
-	  console.log(webhook_event);
+	  //console.log(webhook_event);
 
 
 	  // Get the sender PSID
 	  let sender_psid = webhook_event.sender.id;
-	  console.log('Sender PSID: ' + sender_psid);
+	  //console.log('Sender PSID: ' + sender_psid);
 
 	  // Check if the event is a message or postback and
 	  // pass the event to the appropriate handler function
@@ -77,7 +82,7 @@ app.get('/webhook', (req, res) => {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
       
       // Responds with the challenge token from the request
-      console.log('WEBHOOK_VERIFIED');
+      //console.log('WEBHOOK_VERIFIED');
       res.status(200).send(challenge);
     
     } else {
@@ -179,7 +184,7 @@ function callSendAPI(sender_psid, response) {
     "message": response
   }
   
-  console.log(request_body);
+  //console.log(request_body);
 
   // Send the HTTP request to the Messenger Platform
   request({
@@ -189,9 +194,42 @@ function callSendAPI(sender_psid, response) {
     "json": request_body
   }, (err, res, body) => {
     if (!err) {
-      console.log('Message sent! The sent message contents: ', response);
+      //console.log('Message sent! The sent message contents: ', response);
     } else {
-      console.error("Unable to send message:" + err);
+      //console.error("Unable to send message:" + err);
     }
   }); 
 }
+
+app.post('/ai', (req, res) => {
+  console.log('*** Webhook for yelp api query ***');
+  console.log(req.body.result);
+
+  if (req.body.result.action === 'food') {
+    console.log('*** food ***');
+    let city = req.body.result.parameters['geo-city'];
+    
+    console.log("about to make yelp api request, city: ", city);
+    
+    yelpClient.search({
+      term:'food',
+      location: city
+    }).then(response => {
+      console.log("contact success");
+      return res.json({
+          speech: "hi, made contact",
+          displayText: "hi, made contact",
+          source: 'food'
+      });
+    }).catch(e => {
+      console.log(e);
+      let errorMessage = 'I failed to look up the city name.';
+        return res.status(400).json({
+          status: {
+            code: 400,
+            errorType: errorMessage
+          }
+        });
+    });
+  }
+});
