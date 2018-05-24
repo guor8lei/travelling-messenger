@@ -215,10 +215,10 @@ app.post('/ai', (req, res) => {
       term:'food',
       location: city
     }).then(response => {
-      console.log("contact success");
+      let msg = "The top restaurants in the city of " + city + " are: " + response.jsonBody.businesses[0].name + ", " + response.jsonBody.businesses[1].name + ", and " + response.jsonBody.businesses[2].name + ".";
       return res.json({
-          speech: "hi, made contact",
-          displayText: "hi, made contact",
+          speech: msg,
+          displayText: msg,
           source: 'food'
       });
     }).catch(e => {
