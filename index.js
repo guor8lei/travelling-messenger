@@ -166,9 +166,9 @@ function handlePostback(sender_psid, received_postback) {
 
   // Set the response based on the postback payload
   if (payload === 'yes') {
-    response = { "text": "OoOoOo yes it seems as if ur old man still has the magical touch! Send me another message, won'tcha son!" }
+    response = { "text": "That's great!" }
   } else if (payload === 'no') {
-    response = { "text": "Oops ma bad. Y doncha try again brother and hopefully old pops will get it right this time!" }
+    response = { "text": "That's too bad." }
   }
   // Send the message to acknowledge the postback
   callSendAPI(sender_psid, response);
@@ -196,7 +196,7 @@ function callSendAPI(sender_psid, response) {
     if (!err) {
       //console.log('Message sent! The sent message contents: ', response);
     } else {
-      //console.error("Unable to send message:" + err);
+      console.error("Unable to send message:" + err);
     }
   }); 
 }
@@ -220,6 +220,59 @@ app.post('/ai', (req, res) => {
           speech: msg,
           displayText: msg,
           source: 'food'
+      });
+    }).catch(e => {
+      console.log(e);
+      let errorMessage = 'I failed to look up the city name.';
+        return res.status(400).json({
+          status: {
+            code: 400,
+            errorType: errorMessage
+          }
+        });
+    });
+  } else if (req.body.result.action === 'foodtype') {
+    console.log('*** foodtype ***');
+    let city = req.body.result.parameters['geo-city'];
+    let foodtype = req.body.result.parameters['food-type'];
+    
+    console.log("about to make yelp api request, city: ", city, "foodtype: ", foodtype);
+    
+    yelpClient.search({
+      term: foodtype,
+      location: city
+    }).then(response => {
+      let firstB = response.jsonBody.businesses[0];
+      let secB = response.jsonBody.businesses[1];
+      let thirdB = response.jsonBody.businesses[2];
+      let msg = "The top " + foodtype + " restaurants in the city of " + city + " are: " + firstB.name + " (" + firstB.price + ", " + firstB.rating + " stars with " + firstB.review_count + " reviews), " 
+                                                                                         + secB.name + " (" + secB.price + ", " + secB.rating + " stars with " + secB.review_count + " reviews), and " 
+                                                                                         + thirdB.name + " (" + thirdB.price + ", " + thirdB.rating + " stars with " + thirdB.review_count + " reviews).";
+      let out_msg = {
+        "attachment": {
+          "type": "template",
+          "payload": {
+            "template_type": "button",
+            "text": `Choose one`,
+            "buttons": [{
+              "type": "postback",
+              "title": "Yes ur amazing!",
+              "payload": "yes",
+            },
+            {
+              "type": "postback",
+              "title": "No u suk old man!",
+              "payload": "no",
+            }]
+          }
+        }
+      };
+      
+      return res.json({
+          speech: msg,
+          displayText: msg,
+          data: {"facebook": out_msg},
+          source: 'foodtype'
       });
     }).catch(e => {
       console.log(e);
